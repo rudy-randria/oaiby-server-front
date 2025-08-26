@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout Components
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 
 // Views
+import LoginView from './views/LoginView';
 import DashboardView from './views/DashboardView';
 import SystemView from './views/SystemView';
 import HardwareView from './views/HardwareView';
@@ -18,7 +19,8 @@ import { useApiStatus } from './hooks/useApiStatus';
 // Constants
 import { API_BASE } from './utils/constants';
 
-const App = () => {
+// Composant pour l'app principale (après login)
+const MainApp = ({ onLogout }) => {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const apiStatus = useApiStatus();
@@ -43,6 +45,7 @@ const App = () => {
         activeView={activeView}
         onViewChange={setActiveView}
         apiStatus={apiStatus}
+        onLogout={onLogout}
       />
 
       {/* Overlay pour mobile */}
@@ -65,7 +68,7 @@ const App = () => {
             {apiStatus === 'error' && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
                 <div className="flex">
-                  <AlertCircle className="h-5 w-5 text-red-400" />
+                  <div className="h-5 w-5 text-red-400">⚠️</div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-red-800">
                       Connexion API impossible
@@ -84,6 +87,98 @@ const App = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+// Composant principal avec routing
+const App = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Vérifier si un token existe au démarrage
+    return localStorage.getItem('authToken') !== null;
+  });
+
+  const handleLogin = (token) => {
+    localStorage.setItem('authToken', token);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Route de login */}
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? 
+            <Navigate to="/dashboard" replace /> : 
+            <LoginView onLogin={handleLogin} />
+          } 
+        />
+        
+        {/* Routes protégées */}
+        <Route 
+          path="/dashboard" 
+          element={
+            isAuthenticated ? 
+            <MainApp onLogout={handleLogout} /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+        
+        <Route 
+          path="/system" 
+          element={
+            isAuthenticated ? 
+            <MainApp onLogout={handleLogout} /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+        
+        <Route 
+          path="/hardware" 
+          element={
+            isAuthenticated ? 
+            <MainApp onLogout={handleLogout} /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+        
+        <Route 
+          path="/network" 
+          element={
+            isAuthenticated ? 
+            <MainApp onLogout={handleLogout} /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+        
+        <Route 
+          path="/services" 
+          element={
+            isAuthenticated ? 
+            <MainApp onLogout={handleLogout} /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+
+        {/* Route par défaut */}
+        <Route 
+          path="/" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+        
+        {/* Catch all - rediriger vers dashboard */}
+        <Route 
+          path="*" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

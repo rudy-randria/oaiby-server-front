@@ -1,8 +1,8 @@
 import React from 'react';
-import { Server, X, BarChart3, Monitor, Cpu, Wifi, Settings } from 'lucide-react';
+import { Server, X, BarChart3, Monitor, Cpu, Wifi, Settings, LogOut } from 'lucide-react';
 import StatusBadge from '../UI/StatusBadge';
 
-const Sidebar = ({ isOpen, onClose, activeView, onViewChange, apiStatus }) => {
+const Sidebar = ({ isOpen, onClose, activeView, onViewChange, apiStatus, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'system', label: 'Système', icon: Monitor },
@@ -10,6 +10,12 @@ const Sidebar = ({ isOpen, onClose, activeView, onViewChange, apiStatus }) => {
     { id: 'network', label: 'Réseau', icon: Wifi },
     { id: 'services', label: 'Services', icon: Settings },
   ];
+
+  const handleLogout = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+      onLogout();
+    }
+  };
 
   return (
     <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
@@ -31,7 +37,7 @@ const Sidebar = ({ isOpen, onClose, activeView, onViewChange, apiStatus }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="mt-6">
+      <nav className="mt-6 flex-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -54,8 +60,19 @@ const Sidebar = ({ isOpen, onClose, activeView, onViewChange, apiStatus }) => {
         })}
       </nav>
 
+      {/* Bouton Déconnexion */}
+      <div className="px-6 py-3 border-t border-gray-200">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center px-3 py-2 text-left hover:bg-red-50 transition-colors text-red-600 hover:text-red-700 rounded-md"
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          Déconnexion
+        </button>
+      </div>
+
       {/* Statut API */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+      <div className="px-4 py-3 border-t border-gray-200">
         <StatusBadge status={apiStatus} />
       </div>
     </div>
