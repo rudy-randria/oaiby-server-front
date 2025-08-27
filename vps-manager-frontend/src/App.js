@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 // Layout Components
 import Sidebar from './components/Layout/Sidebar';
@@ -21,9 +21,22 @@ import { API_BASE } from './utils/constants';
 
 // Composant pour l'app principale (après login)
 const MainApp = ({ onLogout }) => {
-  const [activeView, setActiveView] = useState('dashboard');
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const apiStatus = useApiStatus();
+
+  // Synchroniser activeView avec l'URL
+  const [activeView, setActiveView] = useState(() => {
+    const path = location.pathname.replace('/', '');
+    return path || 'dashboard';
+  });
+
+  // Mettre à jour activeView quand l'URL change
+  useEffect(() => {
+    const path = location.pathname.replace('/', '');
+    const view = path || 'dashboard';
+    setActiveView(view);
+  }, [location.pathname]);
 
   // Mapping des vues
   const viewComponents = {
@@ -90,6 +103,14 @@ const MainApp = ({ onLogout }) => {
   );
 };
 
+// Composant de protection des routes
+const ProtectedRoute = ({ children, isAuthenticated }) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 // Composant principal avec routing
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -120,49 +141,49 @@ const App = () => {
           } 
         />
         
-        {/* Routes protégées */}
+        {/* Routes protégées - toutes utilisent MainApp mais avec des URLs différentes */}
         <Route 
           path="/dashboard" 
           element={
-            isAuthenticated ? 
-            <MainApp onLogout={handleLogout} /> : 
-            <Navigate to="/login" replace />
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainApp onLogout={handleLogout} />
+            </ProtectedRoute>
           } 
         />
         
         <Route 
           path="/system" 
           element={
-            isAuthenticated ? 
-            <MainApp onLogout={handleLogout} /> : 
-            <Navigate to="/login" replace />
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainApp onLogout={handleLogout} />
+            </ProtectedRoute>
           } 
         />
         
         <Route 
           path="/hardware" 
           element={
-            isAuthenticated ? 
-            <MainApp onLogout={handleLogout} /> : 
-            <Navigate to="/login" replace />
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainApp onLogout={handleLogout} />
+            </ProtectedRoute>
           } 
         />
         
         <Route 
           path="/network" 
           element={
-            isAuthenticated ? 
-            <MainApp onLogout={handleLogout} /> : 
-            <Navigate to="/login" replace />
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainApp onLogout={handleLogout} />
+            </ProtectedRoute>
           } 
         />
         
         <Route 
           path="/services" 
           element={
-            isAuthenticated ? 
-            <MainApp onLogout={handleLogout} /> : 
-            <Navigate to="/login" replace />
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainApp onLogout={handleLogout} />
+            </ProtectedRoute>
           } 
         />
 
