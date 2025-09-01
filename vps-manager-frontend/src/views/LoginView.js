@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Lock, User, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import ApiService from '../services/api';
 
 const LoginView = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({
@@ -9,24 +10,43 @@ const LoginView = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Écouter les changements de connexion
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (!isOnline) {
+      setError('Pas de connexion internet. Veuillez vérifier votre connexion.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Simulation d'une authentification
-      // Remplacez par votre logique d'authentification réelle
-      if (credentials.username === 'admin' && credentials.password === 'password') {
-        // Simulation d'un token
-        const fakeToken = 'fake-jwt-token-' + Date.now();
-        onLogin(fakeToken);
-      } else {
-        setError('Nom d\'utilisateur ou mot de passe incorrect');
-      }
+      // Utiliser le service API pour la connexion
+      const authData = await ApiService.login(credentials.username, credentials.password);
+      
+      // Appeler la callback avec les données d'authentification
+      onLogin(authData);
+      
     } catch (err) {
-      setError('Erreur de connexion');
+      console.error('Erreur de connexion:', err);
+      setError(err.message || 'Erreur de connexion');
     } finally {
       setIsLoading(false);
     }
@@ -38,17 +58,22 @@ const LoginView = ({ onLogin }) => {
       ...prev,
       [name]: value
     }));
+    // Effacer l'erreur quand l'utilisateur tape
+    if (error) {
+      setError('');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full">        
+
         {/* Logo/Titre */}
         <div className="text-center mb-8">
           <div className="mx-auto h-12 w-12 bg-white rounded-full flex items-center justify-center mb-4">
             <Lock className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="text-3xl font-bold text-white">VPS Manager</h2>
+          <h2 className="text-3xl font-bold text-white">KARAKS</h2>
           <p className="text-blue-200 mt-2">Connectez-vous pour continuer</p>
         </div>
 
@@ -71,7 +96,12 @@ const LoginView = ({ onLogin }) => {
                   required
                   value={credentials.username}
                   onChange={handleInputChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading || !isOnline}
+                  className={`block w-full pl-10 pr-3 py-2 border rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    isLoading || !isOnline 
+                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed' 
+                      : 'border-gray-300'
+                  }`}
                   placeholder="Entrez votre nom d'utilisateur"
                 />
               </div>
@@ -93,13 +123,19 @@ const LoginView = ({ onLogin }) => {
                   required
                   value={credentials.password}
                   onChange={handleInputChange}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading || !isOnline}
+                  className={`block w-full pl-10 pr-10 py-2 border rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    isLoading || !isOnline 
+                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed' 
+                      : 'border-gray-300'
+                  }`}
                   placeholder="Entrez votre mot de passe"
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
@@ -113,32 +149,34 @@ const LoginView = ({ onLogin }) => {
             {/* Message d'erreur */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <div className="text-sm text-red-600">{error}</div>
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
+                  <div className="text-sm text-red-600">{error}</div>
+                </div>
               </div>
             )}
 
             {/* Bouton de connexion */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !isOnline}
               className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                isLoading
+                isLoading || !isOnline
                   ? 'bg-blue-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
               }`}
             >
-              {isLoading ? 'Connexion...' : 'Se connecter'}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Connexion...
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </button>
           </form>
-
-          {/* Informations de test */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <p className="text-xs text-gray-600 text-center">
-              <strong>Compte de test:</strong><br />
-              Utilisateur: <code className="bg-gray-200 px-1 rounded">admin</code><br />
-              Mot de passe: <code className="bg-gray-200 px-1 rounded">password</code>
-            </p>
-          </div>
+          
         </div>
 
         {/* Footer */}
