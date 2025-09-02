@@ -182,7 +182,7 @@ const LoginView = ({ onLogin }) => {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-blue-200 text-sm">
-            © 2024 VPS Manager. Tous droits réservés.
+            © 2025 OAIBY. Tous droits réservés.
           </p>
         </div>
       </div>
